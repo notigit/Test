@@ -1,0 +1,134 @@
+apply plugin: 'com.android.library'
+//添加以下两个插件
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+//你的library版本号
+version = "3.1.12"
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 18
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+//增加lint选项，不加的话下面上传到jCenter有可能会报错
+    lintOptions {
+        abortOnError false
+    }
+}
+buildscript {
+    repositories {
+        jcenter()
+        google()
+    }
+
+}
+task makeJar(type: Copy) {
+    delete 'build/libs/Test.jar' //删除已经存在的jar包
+    from('build/intermediates/packaged-classes/release/')//从该目录下加载要打包的文件
+    into('jar/')//jar包的保存目录
+    include('classes.jar')//设置过滤，只打包classes文件
+    rename('classes.jar', 'Test.jar')//重命名，mylibrary.jar 根据自己的需求设置
+}
+makeJar.dependsOn(build)
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}
+//你的library的地址
+def siteUrl = 'https://github.com/notigit/Test'
+def gitUrl = 'https://github.com/notigit/Test.git'
+def issueUrl = 'https://github.com/notigit/Test/issues'
+//这个蛮重要的，你上传到jCenter后一些文件存放的路径，如果不写或者写错了的话
+//可以不会产生pom文件，后面上传到jCenter后会报错，这个问题我搞了一下午！
+group = "com.xyzh.test"
+install {
+    repositories.mavenInstaller {
+        // POM.xml文件内容
+        pom {
+            project {
+                packaging 'aar'
+                // 添加描述，不重要
+                name 'test'
+                url siteUrl
+                // 协议
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id 'notitan' //your user ID
+                        name 'noti' //your name
+                        email 'notitan131415@gmail.com' //your email
+                    }
+                }
+                scm {
+                    connection gitUrl
+                    developerConnection gitUrl
+                    url siteUrl
+                }
+            }
+        }
+    }
+}
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+//task javadoc(type: Javadoc) {
+//
+//    //增加编码，这行很重要，如果是windows系统，同时如果在代码中有中文的话，不加这行，上传会报错
+//    options.encoding="utf-8"
+//    source = android.sourceSets.main.java.srcDirs
+//    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+//}
+//task javadocJar(type: Jar, dependsOn: javadoc) {
+//    classifier = 'javadoc'
+//    from javadoc.destinationDir
+//}
+//artifacts {
+//    archives javadocJar
+//    archives sourcesJar
+//}
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+    configurations = ['archives']
+    pkg {
+        //发布到Bintray的哪个仓库
+        repo = "maven"
+        //发布到Bintray上的名字
+        name = "test"
+        //项目描述
+        desc = "a test desc"
+        websiteUrl = siteUrl
+        vcsUrl = gitUrl
+        issueTrackerUrl = issueUrl
+        licenses = ["Apache-2.0"]
+        //标签
+        labels = ['android']
+        publish = true
+        publicDownloadNumbers = true
+    }
+}

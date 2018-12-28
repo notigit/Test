@@ -1,4 +1,4 @@
-package com.xyzh.testLibrary;
+package com.xyzh.testLibrary.view.dialog;
 
 /**
  * 作者：liji on 2018/1/22 09:46
